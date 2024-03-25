@@ -11,13 +11,13 @@ class NetworkHelper {
     // this.instance.interceptors.response.use
   }
 
-  get(
+  get<T>(
     url: string,
     queryObj?: Record<string, any>,
     options?: AxiosRequestConfig<any>,
   ) {
     const reqUrl = queryObj ? url + data2UrlSearch(queryObj) : url;
-    return this.instance.get(reqUrl, options);
+    return this.instance.get<T>(reqUrl, options);
   }
 
   post<T extends Record<string, any>>(

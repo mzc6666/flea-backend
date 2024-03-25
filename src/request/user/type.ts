@@ -16,10 +16,10 @@ export namespace IUser {
 
     export interface Response {
       session_key: string;
-      unionid: string;
-      errmsg: string;
+      // unionid: string;
+      // errmsg: string;
       openid: string;
-      errcode: number;
+      // errcode: number;
     }
   }
 

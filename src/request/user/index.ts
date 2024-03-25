@@ -9,8 +9,7 @@ const login = (params: IUser.Login.Params) => {
   params.appid = params.appid ?? GLOBAL_CONFIGS.appId;
   params.secret = params.secret ?? GLOBAL_CONFIGS['appSecret'];
   params.grant_type = 'authorization_code';
-  console.log('params', params);
-  return networkHelper.get('/sns/jscode2session', params);
+  return networkHelper.get<IUser.Login.Response>('/sns/jscode2session', params);
 };
 
 /**
@@ -22,7 +21,10 @@ export const getAccessToken = () => {
     appid: GLOBAL_CONFIGS.appId,
     secret: GLOBAL_CONFIGS.appSecret,
   };
-  return networkHelper.get('/cgi-bin/token', params);
+  return networkHelper.get<IUser.AccessToken.Response>(
+    '/cgi-bin/token',
+    params,
+  );
 };
 
 const userApi = {
