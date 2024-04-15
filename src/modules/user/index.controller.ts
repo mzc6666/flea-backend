@@ -58,8 +58,31 @@ export class UserController {
       const user_id = (await User.findOne({ openId }))._id;
       const result = await Preview.find({
         user: user_id,
-      }).populate('good');
-      res.json(new CommonResBody('200', 'success', result));
+      }).populate(['good', 'user']);
+      res
+        .status(HttpStatus.OK)
+        .json(new CommonResBody('200', 'success', result));
+    } catch (error) {
+      res.status(HttpStatus.BAD_REQUEST).end();
+    }
+  }
+
+  // 获取浏览历史
+  @Get('collect')
+  async getCollects(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      const token = req.headers['token'];
+      const openId = this.authService.token2OpenId(token);
+      const user_id = (await User.findOne({ openId }))._id;
+      const result = await Collect.find({
+        user: user_id,
+      }).populate(['good', 'user']);
+      res
+        .status(HttpStatus.OK)
+        .json(new CommonResBody('200', 'success', result));
     } catch (error) {
       res.status(HttpStatus.BAD_REQUEST).end();
     }
