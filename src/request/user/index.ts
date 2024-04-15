@@ -12,24 +12,8 @@ const login = (params: IUser.Login.Params) => {
   return networkHelper.get<IUser.Login.Response>('/sns/jscode2session', params);
 };
 
-/**
- * [获取access_token]
- */
-export const getAccessToken = () => {
-  const params: IUser.AccessToken.Params = {
-    grant_type: 'client_credential',
-    appid: GLOBAL_CONFIGS.appId,
-    secret: GLOBAL_CONFIGS.appSecret,
-  };
-  return networkHelper.get<IUser.AccessToken.Response>(
-    '/cgi-bin/token',
-    params,
-  );
-};
-
 const userApi = {
   login,
-  getAccessToken,
 };
 
 export default userApi;

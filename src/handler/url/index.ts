@@ -20,3 +20,10 @@ export function searchToObj(search: string): Record<string, any> {
   }
   return jsObj;
 }
+
+/**
+ * [获取图片链接]
+ */
+export const getImageUrl = (imgName: string) => {
+  return `http://127.0.0.1:3000/${imgName}`;
+};
