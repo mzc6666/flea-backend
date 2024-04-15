@@ -1,26 +1,60 @@
 import { Injectable } from '@nestjs/common';
+import { AuthData, OpenId } from './types';
+import * as jwt from 'jsonwebtoken';
+import { GLOBAL_CONFIGS } from 'src/config';
+
+interface AccessData {
+  access_token?: string;
+  access_token_expire_time?: string;
+}
 
 @Injectable()
 export class AuthService {
-  private access_token: string;
-  private expires_in: number;
-  private tokenMap: Map<string, string> = new Map(); // token通过openid和过期时间加密获得
+  private access_token: string; // 微信后端接口调用凭证
 
-  getAccessToken() {
-    return this.access_token;
-  }
-  setAccessToken(access_token: string) {
-    this.access_token = access_token;
-  }
+  private access_token_expire_time: string; // access_token过期时间
 
-  getEexpirationTime() {
-    return this.expires_in;
-  }
-  setEexpirationTime(expires_in: number) {
-    this.expires_in = expires_in;
+  private authMap: Map<OpenId, AuthData>; // 用户的鉴权数据
+
+  constructor() {
+    this.authMap = new Map();
   }
 
-  setTokenByOpenId(id: string) {}
+  saveAccessData(option: AccessData) {
+    const { access_token, access_token_expire_time } = option;
+    access_token && (this.access_token = access_token);
+    access_token_expire_time &&
+      (this.access_token_expire_time = access_token_expire_time);
+  }
 
-  getTokenByOpenId(id: string) {}
+  generateToken(openId: string) {
+    return jwt.sign(
+      {
+        id: openId,
+      },
+      GLOBAL_CONFIGS.appSecret,
+      {
+        expiresIn: '2d',
+      },
+    );
+  }
+
+  saveAuthData(
+    openId: string,
+    data: {
+      token?: string;
+      session_key?: string;
+    },
+  ) {
+    this.authMap.set(openId, {
+      token: data.token ?? this.authMap.get(openId)?.token ?? null,
+      session_key:
+        data.session_key ?? this.authMap.get(openId)?.session_key ?? null,
+    });
+  }
+
+  token2OpenId(token: string) {
+    const result = jwt.verify(token, GLOBAL_CONFIGS.appSecret) as any;
+    return result.id;
+  }
 }
