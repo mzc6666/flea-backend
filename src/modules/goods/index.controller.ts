@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpStatus,
   Param,
   Post,
@@ -15,10 +16,11 @@ import { GoodData, GoodParams } from './index.dto';
 import { Good } from 'src/db/modules/goods/model';
 import { Request, Response } from 'express';
 import { CommonResBody } from 'src/handler/response';
-import { cloneDeep } from 'src/handler/transform';
 import { Collect } from 'src/db/modules/collect';
 import { Preview } from 'src/db/modules/preview';
 import { User } from 'src/db/modules/user';
+import { I_Preview } from './types';
+import mongoose from 'mongoose';
 
 @Controller('/goods')
 export class GoodsController {
@@ -49,6 +51,7 @@ export class GoodsController {
       const lastTimeStamp = lastValue ? lastValue : Date.now();
       const regex = new RegExp(keywords, 'i');
       const lists = await Good.find({
+        on_sale: true,
         desc: { $regex: regex },
         update_time: { $lt: lastTimeStamp },
       }).limit(pageSize);
@@ -70,11 +73,13 @@ export class GoodsController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    console.log('param', param);
     const token = req.headers['token'] as string;
     const openId = this.authService.token2OpenId(token!);
     const data = await Good.findOne({
-      _id: param.id,
+      _id: new mongoose.Types.ObjectId(param.id),
     }).populate('author');
+    console.log('data', data);
     if (!data) {
       res.status(HttpStatus.BAD_REQUEST).send();
       return;
@@ -92,6 +97,21 @@ export class GoodsController {
       isCollect,
     };
     return new CommonResBody('200', 'success', !data ? null : resBody);
+  }
+
+  /* 删除物品 */
+  @Post('delete')
+  async goodDelete(
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
+    try {
+      const goodId = req.body.id as string;
+      await Good.findByIdAndDelete(goodId);
+      res.json(new CommonResBody('200', 'success', null));
+    } catch (error) {
+      res.status(HttpStatus.BAD_REQUEST).send(null);
+    }
   }
 
   // 物品收藏
@@ -130,31 +150,65 @@ export class GoodsController {
   // 物品浏览
   @Post('preview')
   async preview(
-    @Req() req: Request,
+    @Headers() headers,
+    @Body() body: I_Preview.Body,
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const token = req.headers['token'] as string;
-      const goodId = req.body.id as any;
+      const token = headers['token'] as string;
+      const goodId = body.id;
       const openId = this.authService.token2OpenId(token);
       const user_id = (await User.findOne({ openId }))._id;
-      const data = await Preview.findOneAndUpdate(
-        {
-          user: user_id,
-          good: goodId,
-        },
-        {
-          preview_date: Date.now(),
-        },
-      );
-      if (data) {
-        res.json(new CommonResBody('200', 'success', 'update success'));
+      const datas = await Preview.find({ good: body.id, user: user_id });
+      if (datas.length) {
+        datas[0].preview_date = Date.now();
+        await datas[0].save();
       } else {
-        const previewion = new Preview({ user: user_id, good: goodId });
-        await previewion.save();
-        res.json(new CommonResBody('200', 'success', 'add success'));
+        const preview = new Preview({
+          good: goodId,
+          user: user_id,
+          preview_date: Date.now(),
+        });
+        await preview.save();
       }
+      res.json(new CommonResBody('200', 'success', null));
     } catch (err) {
+      res.status(HttpStatus.BAD_REQUEST).send(null);
+    }
+  }
+
+  // 物品上架
+  @Post('putaway')
+  async goodPutaway(
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
+    try {
+      const goodId = req.body.id as string;
+      await Good.findByIdAndUpdate(goodId, {
+        on_sale: true,
+        update_time: Date.now(),
+      });
+      res.json(new CommonResBody('200', 'success', null));
+    } catch (error) {
+      res.status(HttpStatus.BAD_REQUEST).send(null);
+    }
+  }
+
+  // 物品下架
+  @Post('offline')
+  async goodOffline(
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
+    try {
+      const goodId = req.body.id as string;
+      await Good.findByIdAndUpdate(goodId, {
+        on_sale: false,
+        update_time: Date.now(),
+      });
+      res.json(new CommonResBody('200', 'success', null));
+    } catch (error) {
       res.status(HttpStatus.BAD_REQUEST).send(null);
     }
   }

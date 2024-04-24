@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { UseLevel } from 'src/config';
 
 const goodSchema = new mongoose.Schema({
   photos: [String],
@@ -6,9 +7,15 @@ const goodSchema = new mongoose.Schema({
   price: String,
   longitude: Number,
   latitude: Number,
+  // 使用程度
   status: {
     type: Number,
-    enum: [0, 1, 2, 3],
+    enum: [
+      UseLevel.excellent,
+      UseLevel.slightUse,
+      UseLevel.fine,
+      UseLevel.ordinary,
+    ],
   },
   publish_date: {
     type: Number,
@@ -23,6 +30,11 @@ const goodSchema = new mongoose.Schema({
   update_time: {
     type: Number,
     default: Date.now,
+  },
+  /* 物品状态  */
+  on_sale: {
+    type: Boolean,
+    default: true,
   },
 });
 

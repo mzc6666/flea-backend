@@ -12,8 +12,21 @@ const login = (params: IUser.Login.Params) => {
   return networkHelper.get<IUser.Login.Response>('/sns/jscode2session', params);
 };
 
+type Type = {
+  access_token: string;
+  openid: string;
+  lang?: 'zh_CN';
+};
+/**
+ * [登录]
+ */
+const getUserInfo = (params: Type) => {
+  return networkHelper.get<any>('/cgi-bin/user/info', params);
+};
+
 const userApi = {
   login,
+  getUserInfo,
 };
 
 export default userApi;

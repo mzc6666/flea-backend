@@ -1,14 +1,27 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { NextFunction } from 'express';
-import { AuthService } from 'src/modules/auth/index.provider';
-import { authApi } from 'src/request';
+import { HttpStatus, Injectable, NestMiddleware } from '@nestjs/common';
+import * as jwt from 'jsonwebtoken';
+import { GLOBAL_CONFIGS } from 'src/config';
+import { Request, Response, NextFunction } from 'express';
 
 @Injectable()
-export class AuthMiddleWare implements NestMiddleware {
-  constructor(private authService: AuthService) {}
+export class TokenMiddleWare implements NestMiddleware {
+  verifyToken(token: string) {
+    try {
+      jwt.verify(token, GLOBAL_CONFIGS.appSecret) as any;
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
   use(req: Request, res: Response, next: NextFunction) {
-    // TODO: 补齐access_token的逻辑和token的逻辑
-    // 检查access_token 检查token是否过期
-    next();
+    const token = req.headers['token'] as string;
+    if (this.verifyToken(token)) {
+      next();
+    } else {
+      res
+        .status(HttpStatus.UNAUTHORIZED)
+        .json({ message: 'Token expired or invalid' });
+    }
   }
 }
